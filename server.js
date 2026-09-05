@@ -1,5 +1,5 @@
 const http = require("http");
-const WebSocket = require("ws");
+const { WebSocketServer, WebSocket } = require("ws");
 
 const PORT = Number(process.env.PORT) || 10000;
 
@@ -85,18 +85,16 @@ const server = http.createServer((req, res) => {
     }));
 });
 
-
-const wss = new WebSocket.Server({
+const wss = new WebSocketServer({
     server: server
 });
 
-
 wss.on("connection", (ws) => {
-    console.log("یک بازیکن به WebSocket وصل شد.");
+    console.log("WebSocket player connected");
 
     ws.send(JSON.stringify({
         type: "connected",
-        message: "Connected to Bomb City server"
+        message: "Bomb City online"
     }));
 
     ws.on("message", (raw) => {
@@ -126,18 +124,15 @@ wss.on("connection", (ws) => {
                 console.log(`${name}: ${text}`);
             }
         } catch (e) {
-            console.log("پیام نامعتبر دریافت شد.");
+            console.log("Invalid WebSocket message");
         }
     });
 
     ws.on("close", () => {
-        console.log("یک بازیکن از WebSocket خارج شد.");
+        console.log("WebSocket player disconnected");
     });
 });
-
 
 server.listen(PORT, "0.0.0.0", () => {
     console.log(`Bomb City server running on port ${PORT}`);
 });
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }));
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         });
