@@ -1,4 +1,5 @@
 const http = require("http");
+const WebSocket = require("ws");
 
 const PORT = Number(process.env.PORT) || 10000;
 
@@ -6,84 +7,137 @@ const players = new Map();
 
 const server = http.createServer((req, res) => {
     res.setHeader("Content-Type", "application/json; charset=utf-8");
-        res.setHeader("Access-Control-Allow-Origin", "*");
-            res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-                res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-                    if (req.method === "OPTIONS") {
-                            res.writeHead(204);
-                                    res.end();
-                                            return;
-                                                }
+    if (req.method === "OPTIONS") {
+        res.writeHead(204);
+        res.end();
+        return;
+    }
 
-                                                    if (req.url === "/") {
-                                                            res.writeHead(200);
-                                                                    res.end(JSON.stringify({
-                                                                                game: "Bomb City",
-                                                                                            status: "online",
-                                                                                                        players: players.size
-                                                                                                                }));
-                                                                                                                        return;
-                                                                                                                            }
+    if (req.url === "/") {
+        res.writeHead(200);
+        res.end(JSON.stringify({
+            game: "Bomb City",
+            status: "online",
+            players: players.size
+        }));
+        return;
+    }
 
-                                                                                                                                if (req.method === "GET" && req.url === "/players") {
-                                                                                                                                        res.writeHead(200);
-                                                                                                                                                res.end(JSON.stringify(
-                                                                                                                                                            Array.from(players.entries()).map(([name, data]) => ({
-                                                                                                                                                                            name: name,
-                                                                                                                                                                                            coins: data.coins
-                                                                                                                                                                                                        }))
-                                                                                                                                                                                                                ));
-                                                                                                                                                                                                                        return;
-                                                                                                                                                                                                                            }
+    if (req.method === "GET" && req.url === "/players") {
+        res.writeHead(200);
+        res.end(JSON.stringify(
+            Array.from(players.entries()).map(([name, data]) => ({
+                name: name,
+                coins: data.coins
+            }))
+        ));
+        return;
+    }
 
-                                                                                                                                                                                                                                if (req.method === "POST" && req.url === "/players") {
-                                                                                                                                                                                                                                        let body = "";
+    if (req.method === "POST" && req.url === "/players") {
+        let body = "";
 
-                                                                                                                                                                                                                                                req.on("data", chunk => {
-                                                                                                                                                                                                                                                            body += chunk;
-                                                                                                                                                                                                                                                                    });
+        req.on("data", chunk => {
+            body += chunk;
+        });
 
-                                                                                                                                                                                                                                                                            req.on("end", () => {
-                                                                                                                                                                                                                                                                                        try {
-                                                                                                                                                                                                                                                                                                        const data = JSON.parse(body);
-                                                                                                                                                                                                                                                                                                                        const name = String(data.name || "").trim();
+        req.on("end", () => {
+            try {
+                const data = JSON.parse(body);
+                const name = String(data.name || "").trim();
 
-                                                                                                                                                                                                                                                                                                                                        if (!name) {
-                                                                                                                                                                                                                                                                                                                                                            res.writeHead(400);
-                                                                                                                                                                                                                                                                                                                                                                                res.end(JSON.stringify({
-                                                                                                                                                                                                                                                                                                                                                                                                        error: "Name is required"
-                                                                                                                                                                                                                                                                                                                                                                                                                            }));
-                                                                                                                                                                                                                                                                                                                                                                                                                                                return;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                }
+                if (!name) {
+                    res.writeHead(400);
+                    res.end(JSON.stringify({
+                        error: "Name is required"
+                    }));
+                    return;
+                }
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                players.set(name, {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    coins: 0
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    });
+                players.set(name, {
+                    coins: 0
+                });
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    res.writeHead(200);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    res.end(JSON.stringify({
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        success: true,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            name: name,
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                coins: 0
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }));
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            } catch (e) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            res.writeHead(400);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            res.end(JSON.stringify({
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                error: "Invalid JSON"
+                res.writeHead(200);
+                res.end(JSON.stringify({
+                    success: true,
+                    name: name,
+                    coins: 0
+                }));
+            } catch (e) {
+                res.writeHead(400);
+                res.end(JSON.stringify({
+                    error: "Invalid JSON"
+                }));
+            }
+        });
+
+        return;
+    }
+
+    res.writeHead(404);
+    res.end(JSON.stringify({
+        error: "Not found"
+    }));
+});
+
+
+const wss = new WebSocket.Server({
+    server: server
+});
+
+
+wss.on("connection", (ws) => {
+    console.log("یک بازیکن به WebSocket وصل شد.");
+
+    ws.send(JSON.stringify({
+        type: "connected",
+        message: "Connected to Bomb City server"
+    }));
+
+    ws.on("message", (raw) => {
+        try {
+            const data = JSON.parse(raw.toString());
+
+            if (data.type === "message") {
+                const name = String(data.name || "").trim();
+                const text = String(data.text || "").trim();
+
+                if (!name || !text) {
+                    return;
+                }
+
+                const message = JSON.stringify({
+                    type: "message",
+                    name: name,
+                    text: text
+                });
+
+                wss.clients.forEach((client) => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(message);
+                    }
+                });
+
+                console.log(`${name}: ${text}`);
+            }
+        } catch (e) {
+            console.log("پیام نامعتبر دریافت شد.");
+        }
+    });
+
+    ws.on("close", () => {
+        console.log("یک بازیکن از WebSocket خارج شد.");
+    });
+});
+
+
+server.listen(PORT, "0.0.0.0", () => {
+    console.log(`Bomb City server running on port ${PORT}`);
+});
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 }));
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    });
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            return;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    res.writeHead(404);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        res.end(JSON.stringify({
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                error: "Not found"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }));
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    });
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    server.listen(PORT, "0.0.0.0", () => {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        console.log(`Bomb City server running on port ${PORT}`);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        });
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         });
