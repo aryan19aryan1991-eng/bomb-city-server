@@ -41,7 +41,7 @@ const server = http.createServer((req, res) => {
     if (req.method === "POST" && req.url === "/players") {
         let body = "";
 
-        req.on("data", chunk => {
+        req.on("data", (chunk) => {
             body += chunk;
         });
 
@@ -68,6 +68,7 @@ const server = http.createServer((req, res) => {
                     name: name,
                     coins: 0
                 }));
+
             } catch (e) {
                 res.writeHead(400);
                 res.end(JSON.stringify({
@@ -84,6 +85,11 @@ const server = http.createServer((req, res) => {
         error: "Not found"
     }));
 });
+
+
+/* =========================================================
+   WEBSOCKET
+   ========================================================= */
 
 const wss = new WebSocketServer({
     server: server
@@ -129,8 +135,8 @@ wss.on("connection", (ws) => {
                 wss.clients.forEach((client) => {
 
                     if (
-                        client.readyState
-                        === WebSocket.OPEN
+                        client.readyState ===
+                        WebSocket.OPEN
                     ) {
                         client.send(payload);
                     }
@@ -145,7 +151,6 @@ wss.on("connection", (ws) => {
             );
 
         }
-
     });
 
     ws.on("close", () => {
@@ -156,7 +161,20 @@ wss.on("connection", (ws) => {
 
     });
 
+    ws.on("error", (error) => {
+
+        console.log(
+            "WebSocket error:",
+            error.message
+        );
+
+    });
 });
+
+
+/* =========================================================
+   START SERVER
+   ========================================================= */
 
 server.listen(
     PORT,
