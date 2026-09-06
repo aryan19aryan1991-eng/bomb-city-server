@@ -90,6 +90,7 @@ const wss = new WebSocketServer({
 });
 
 wss.on("connection", (ws) => {
+
     console.log("WebSocket player connected");
 
     ws.send(JSON.stringify({
@@ -98,41 +99,73 @@ wss.on("connection", (ws) => {
     }));
 
     ws.on("message", (raw) => {
+
         try {
-            const data = JSON.parse(raw.toString());
+
+            const data = JSON.parse(
+                raw.toString()
+            );
 
             if (data.type === "message") {
-                const name = String(data.name || "").trim();
-                const text = String(data.text || "").trim();
+
+                const name = String(
+                    data.name || ""
+                ).trim();
+
+                const text = String(
+                    data.text || ""
+                ).trim();
 
                 if (!name || !text) {
                     return;
                 }
 
-                const message = JSON.stringify({
+                const payload = JSON.stringify({
                     type: "message",
                     name: name,
                     text: text
                 });
 
                 wss.clients.forEach((client) => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(message);
-                    }
-                });
 
-                console.log(`${name}: ${text}`);
+                    if (
+                        client.readyState
+                        === WebSocket.OPEN
+                    ) {
+                        client.send(payload);
+                    }
+
+                });
             }
+
         } catch (e) {
-            console.log("Invalid WebSocket message");
+
+            console.log(
+                "Invalid WebSocket message"
+            );
+
         }
+
     });
 
     ws.on("close", () => {
-        console.log("WebSocket player disconnected");
+
+        console.log(
+            "WebSocket player disconnected"
+        );
+
     });
+
 });
 
-server.listen(PORT, "0.0.0.0", () => {
-    console.log(`Bomb City server running on port ${PORT}`);
-});
+server.listen(
+    PORT,
+    "0.0.0.0",
+    () => {
+
+        console.log(
+            `Bomb City server running on port ${PORT}`
+        );
+
+    }
+);
